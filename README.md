@@ -29,3 +29,11 @@ $ gco clear
 ```
 
 Git-coauthor uses your local git config to store authors, so make sure you re-add authors when switching between projects.
+
+## Installation
+
+Clone this repo, and then:
+
+```sh
+$ ./install.sh
+```
