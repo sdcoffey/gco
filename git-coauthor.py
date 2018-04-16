@@ -1,9 +1,11 @@
+#!/usr/bin/python
+
 import argparse
 import base64
 import os
 import tempfile
 
-from subprocess import call, check_output
+from subprocess import call, check_output, CalledProcessError
 
 GIT_CONFIG_KEY = 'coauthor.authors'
 
@@ -84,8 +86,11 @@ def sh(command, return_output=False):
 
 
 def _read_authors():
-    authors = base64.b64decode(sh('git config {}'.format(GIT_CONFIG_KEY), return_output=True))
-    return [Coauthor.parse(line) for line in authors.split(',')]
+    try:
+        authors = base64.b64decode(sh('git config {}'.format(GIT_CONFIG_KEY), return_output=True))
+        return [Coauthor.parse(line) for line in authors.split(',')]
+    except CalledProcessError:
+        return []
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
