@@ -46,29 +46,32 @@ def commit(args):
     else:
         sh('git commit')
 
-def coauthor(args):
-    if args.show:
-        print '\n'.join([ca.str() for ca in _read_authors()])
-    elif args.set:
-        print 'Add your co-authors (press C-d to stop)'
 
-        coauthors = []
-        try:
-            while True:
-                name = raw_input("Co-author's name: ")
-                email = raw_input("{}'s email: ".format(name))
+def show():
+    print '\n'.join([ca.str() for ca in _read_authors()])
 
-                coauthors.append(Coauthor(name, email))
-        except EOFError:
-            pass
 
-        if len(coauthors) > 0:
-            coauthor_serialized = ','.join(['{}:{}'.format(coauthor.name, coauthor.email) for coauthor in coauthors])
+def clear():
+    sh('git config --unset-all {}'.format(GIT_CONFIG_KEY))
 
-            sh('git config --replace-all {} {}'.format(GIT_CONFIG_KEY, base64.b64encode(coauthor_serialized)))
 
-    elif args.clear:
-        sh('git config --unset-all {}'.format(GIT_CONFIG_KEY))
+def add():
+    print 'Add your co-authors (press C-d to stop)'
+
+    coauthors = []
+    try:
+        while True:
+            name = raw_input("Co-author's name: ")
+            email = raw_input("{}'s email: ".format(name))
+
+            coauthors.append(Coauthor(name, email))
+    except EOFError:
+        pass
+
+    if len(coauthors) > 0:
+        coauthor_serialized = ','.join(['{}:{}'.format(coauthor.name, coauthor.email) for coauthor in coauthors])
+
+        sh('git config --replace-all {} {}'.format(GIT_CONFIG_KEY, base64.b64encode(coauthor_serialized)))
 
 
 def sh(command, return_output=False):
@@ -91,15 +94,20 @@ if __name__ == '__main__':
     commit_parser = subparsers.add_parser('commit')
     commit_parser.add_argument('-m', '--message', help='commit message')
 
-    coauthor_parser = subparsers.add_parser('coauthor')
-
-    coauthor_parser.add_argument('-v', '--show', action='store_true', help='show current coauthor(s)')
-    coauthor_parser.add_argument('-s', '--set', action='store_true', help='set co-author(s)')
-    coauthor_parser.add_argument('-r', '--clear', action='store_true', help='clear co-author(s)')
+    coauthor_parser = subparsers.add_parser('clear')
+    coauthor_parser = subparsers.add_parser('add')
+    coauthor_parser = subparsers.add_parser('show')
 
     args = parser.parse_args()
 
     if args.subcommand == 'commit':
         commit(args)
-    elif args.subcommand == 'coauthor':
-        coauthor(args)
+    elif args.subcommand == 'clear':
+        clear()
+    elif args.subcommand == 'show':
+        show()
+    elif args.subcommand == 'add':
+        add()
+    else:
+        print 'command not supported: {}. Try again with --help for options'.format(args.subcommand)
+
