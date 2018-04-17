@@ -39,7 +39,6 @@ def commit(args):
     if args.message:
         tmpfile.write(message)
         tmpfile.write(coauthor_stanza)
-
         tmpfile.close()
 
         sh('git commit -F {}'.format(path))
@@ -49,9 +48,10 @@ def commit(args):
 
         sh('git commit -t {}'.format(path))
 
-        os.unlink(path)
     else:
         sh('git commit')
+
+    os.unlink(path)
 
 
 def show():
