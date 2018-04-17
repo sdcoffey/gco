@@ -28,18 +28,23 @@ def commit(args):
     message = args.message or ''
     coauthors = _read_authors()
 
+    coauthor_stanza = ''
     if len(coauthors) > 0:
-        message += '\n'
-        message += '\n'.join(['Co-authored-by: {}'.format(coauthor.str()) for coauthor in coauthors])
+        coauthor_stanza = '\n\n'
+        coauthor_stanza += '\n'.join(['Co-authored-by: {}'.format(coauthor.str()) for coauthor in coauthors])
+
+    fd, path = tempfile.mkstemp()
+    tmpfile = open(path, 'w')
 
     if args.message:
-        sh('git commit -m "{}"'.format(message))
+        tmpfile.write(message)
+        tmpfile.write(coauthor_stanza)
+
+        tmpfile.close()
+
+        sh('git commit -F {}'.format(path))
     elif len(coauthors) > 0:
-        fd, path = tempfile.mkstemp()
-
-        tmpfile = open(path, 'w')
-
-        tmpfile.write('\n' + message)
+        tmpfile.write(coauthor_stanza)
         tmpfile.close()
 
         sh('git commit -t {}'.format(path))
