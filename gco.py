@@ -5,7 +5,7 @@ import base64
 import os
 import tempfile
 
-from subprocess import call, check_output, CalledProcessError
+from subprocess import call, check_output, CalledProcessError, Popen
 
 GIT_CONFIG_KEY = 'coauthor.authors'
 
@@ -81,13 +81,20 @@ def add():
         sh('git config --replace-all {} {}'.format(GIT_CONFIG_KEY, base64.b64encode(coauthor_serialized)))
 
 
-def sh(command, return_output=False):
-    command = command.split(' ')
+def sh(command, return_output=False, stdout=None, cwd=os.getcwd()):
+    args = command.split(' ')
 
     if return_output:
-        return check_output(command).strip()
+        if not stdout:
+            fd, path = tempfile.mkstemp()
+            stdout = open(path, 'w')
 
-    call(command)
+    cmd = Popen(args, cwd=cwd, stdout=stdout)
+
+    if stdout:
+        return stdout.read()
+
+    cmd.wait()
 
 
 def _read_authors():
