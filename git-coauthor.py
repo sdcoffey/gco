@@ -104,9 +104,9 @@ if __name__ == '__main__':
     commit_parser = subparsers.add_parser('commit')
     commit_parser.add_argument('-m', '--message', help='commit message')
 
-    coauthor_parser = subparsers.add_parser('clear')
-    coauthor_parser = subparsers.add_parser('add')
-    coauthor_parser = subparsers.add_parser('show')
+    subparsers.add_parser('clear')
+    subparsers.add_parser('add')
+    subparsers.add_parser('show')
 
     args = parser.parse_args()
 
