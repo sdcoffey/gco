@@ -30,7 +30,7 @@ def commit(args):
 
     coauthor_stanza = ''
     if len(coauthors) > 0:
-        coauthor_stanza = '\n\n'
+        coauthor_stanza = '\n\n\n'
         coauthor_stanza += '\n'.join(['Co-authored-by: {}'.format(coauthor.str()) for coauthor in coauthors])
 
     fd, path = tempfile.mkstemp()
