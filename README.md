@@ -35,5 +35,5 @@ Git-coauthor uses your local git config to store authors, so make sure you re-ad
 Clone this repo, and then:
 
 ```sh
-$ ./install.sh
+$ make install
 ```
