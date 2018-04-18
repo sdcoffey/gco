@@ -3,9 +3,9 @@
 import argparse
 import base64
 import os
+import subprocess
 import tempfile
 
-from subprocess import call, check_output, CalledProcessError, Popen
 
 GIT_CONFIG_KEY = 'coauthor.authors'
 
@@ -33,25 +33,28 @@ def commit(args):
         coauthor_stanza = '\n\n\n'
         coauthor_stanza += '\n'.join(['Co-authored-by: {}'.format(coauthor.str()) for coauthor in coauthors])
 
-    fd, path = tempfile.mkstemp()
-    tmpfile = open(path, 'w')
+    path = None
 
     if args.message:
-        tmpfile.write(message)
-        tmpfile.write(coauthor_stanza)
-        tmpfile.close()
+        with _tempfile() as tmpfile:
+            path = tmpfile.name
 
-        sh('git commit -F {}'.format(path))
+            tmpfile.write(message)
+            tmpfile.write(coauthor_stanza)
+
+        sh('git commit -F {}'.format(path).split(' '))
     elif len(coauthors) > 0:
-        tmpfile.write(coauthor_stanza)
-        tmpfile.close()
+        with _tempfile() as tmpfile:
+            path = tmpfile.name
 
-        sh('git commit -t {}'.format(path))
+            tmpfile.write(coauthor_stanza)
 
+        sh('git commit -t {}'.format(path).split(' '))
     else:
-        sh('git commit')
+        sh('git commit'.split(' '))
 
-    os.unlink(path)
+    if path:
+        os.unlink(path)
 
 
 def show():
@@ -59,7 +62,7 @@ def show():
 
 
 def clear():
-    sh('git config --unset-all {}'.format(GIT_CONFIG_KEY))
+    sh('git config --unset-all {}'.format(GIT_CONFIG_KEY).split(' '))
 
 
 def add():
@@ -78,31 +81,44 @@ def add():
     if len(coauthors) > 0:
         coauthor_serialized = ','.join(['{}:{}'.format(coauthor.name, coauthor.email) for coauthor in coauthors])
 
-        sh('git config --replace-all {} {}'.format(GIT_CONFIG_KEY, base64.b64encode(coauthor_serialized)))
+        sh('git config --replace-all {} {}'.format(GIT_CONFIG_KEY, base64.b64encode(coauthor_serialized)).split(' '))
 
 
-def sh(command, return_output=False, stdout=None, cwd=os.getcwd()):
-    args = command.split(' ')
-
-    if return_output:
-        if not stdout:
-            fd, path = tempfile.mkstemp()
-            stdout = open(path, 'w')
-
-    cmd = Popen(args, cwd=cwd, stdout=stdout)
-
-    if stdout:
-        return stdout.read()
-
+def shpipe(args, stdout=None, wd=None, stdin=None):
+    cmd = _sp(args, stdout=stdout, stdin=stdin, wd=wd)
     cmd.wait()
+
+
+def sh(args, wd=None, stdin=None):
+    cmd = _sp(args, stdout=subprocess.PIPE, wd=wd, stdin=stdin)
+
+    return cmd.communicate()[0].strip()
+
+
+def _sp(args, stdout=None, stdin=None, wd=None):
+    if not wd:
+        wd = os.getcwd()
+
+    return subprocess.Popen(args, cwd=wd, stdout=stdout, stdin=stdin)
 
 
 def _read_authors():
     try:
-        authors = base64.b64decode(sh('git config {}'.format(GIT_CONFIG_KEY), return_output=True))
+        config = sh('git config {}'.format(GIT_CONFIG_KEY).split(' '))
+        authors = base64.b64decode(config)
+
+        if len(authors) == 0:
+            return []
+
         return [Coauthor.parse(line) for line in authors.split(',')]
-    except CalledProcessError:
+    except subprocess.CalledProcessError:
         return []
+
+
+def _tempfile():
+    fd, path = tempfile.mkstemp()
+    return open(path, 'w')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
